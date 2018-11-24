@@ -4,11 +4,12 @@ html-tidy() {
 }
 
 run() {
-  $1 static/$2 > static-beautified/$2
+  $1 < static/$2 > static-beautified/$2
 }
 
 run html-tidy index
 run html-tidy changelog
 run html-tidy contact
 run html-tidy privacy 
-run js-beautify assets/engine.js 
+run js-beautify assets/engine.js
+run scripts/gamesdata.py games

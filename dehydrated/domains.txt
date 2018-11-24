@@ -1,0 +1,3 @@
+airmash.online *.airmash.online > airmash.online
+test.airmash.online *.test.airmash.online > test.airmash.online
+

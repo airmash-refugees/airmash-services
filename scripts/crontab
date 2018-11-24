@@ -1,0 +1,2 @@
+* * * * * /home/jam/airmash/scripts/update-games.sh >> ~/airmash/update-games.log 2>&1
+0 0 * * * /opt/dehydrated/dehydrated -c >> ~/airmash/dehydrated.log 2>&1

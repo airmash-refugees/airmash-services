@@ -1,0 +1,2 @@
+HOOK="/opt/dehydrated/hook.sh"
+PRIVATE_KEY_RENEW="no"
