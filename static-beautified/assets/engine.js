@@ -19896,7 +19896,7 @@ function() {
     }, Network.setup = function() {
         if (DEVELOPMENT) {
             r = -1 != document.domain.indexOf("192.168.") ? "ws://" + document.domain + ":8010/" + game.playPath : "ws://" + game.playHost + ".airmash.devel:8000/" + game.playPath
-        } else r = "wss://game-" + game.playHost + ".airma.sh/" + game.playPath;
+        } else r = "wss://" + game.playHost + ".airmash.online/" + game.playPath;
         t && n && t.close(), (e = new WebSocket(r)).binaryType = "arraybuffer", e.onopen = function() {
             E({
                 c: P.LOGIN,
@@ -22411,7 +22411,7 @@ function() {
             }, 800, e)
         }
     }, UI.openInvite = function() {
-        b || (UI.closeAllPanels("invite"), game.inviteLink = "https://airma.sh/#" + game.playRegion + "-" + game.playRoom, $("#invite-link").html(game.inviteLink), $("#invite-link").attr("href", game.inviteLink), UI.showPanel("#invitefriends"), b = !0)
+        b || (UI.closeAllPanels("invite"), game.inviteLink = "https://airmash.online/#" + game.playRegion + "-" + game.playRoom, $("#invite-link").html(game.inviteLink), $("#invite-link").attr("href", game.inviteLink), UI.showPanel("#invitefriends"), b = !0)
     }, UI.closeInvite = function() {
         b && (UI.hidePanel("#invitefriends"), b = !1)
     }, UI.toggleInvite = function() {
@@ -23033,7 +23033,7 @@ function() {
             else {
                 s[t].num++;
                 var r;
-                r = DEVELOPMENT ? "/ping" : "https://game-" + t + ".airma.sh/ping", R(t, r, function() {
+                r = DEVELOPMENT ? "/ping" : "https://" + t + ".airmash.online/ping", R(t, r, function() {
                     R(t, r)
                 })
             }
