@@ -21,7 +21,10 @@ deploy_challenge() {
     #   be found in the $TOKEN_FILENAME file.
 
     # Simple example: Use nsupdate with local named
-    # printf 'server 127.0.0.1\nupdate add _acme-challenge.%s 300 IN TXT "%s"\nsend\n' "${DOMAIN}" "${TOKEN_VALUE}" | nsupdate -k /var/run/named/session.key
+    printf '_acme-challenge.%s 300 IN TXT "%s"\n' "${DOMAIN}" "${TOKEN_VALUE}" 
+    echo ${DOMAIN} >> acmedns.txt
+    echo ${TOKEN_VALUE} >> acmedns.txt
+    # read -p "Press any key to continue... " -n1 -s
 }
 
 clean_challenge() {
@@ -62,7 +65,6 @@ deploy_cert() {
     # Simple example: Copy file to nginx config
     # cp "${KEYFILE}" "${FULLCHAINFILE}" /etc/nginx/ssl/; chown -R nginx: /etc/nginx/ssl
     # systemctl reload nginx
-
     echo reloading nginx
     sudo /usr/sbin/service nginx reload
     echo nginx reloaded
@@ -199,8 +201,10 @@ generate_csr() {
 startup_hook() {
   # This hook is called before the cron command to do some initial tasks
   # (e.g. starting a webserver).
-
-  :
+  rm acmedns.txt 2> /dev/null
+  echo ==================== >> ~/airmash/acmedns.log
+  date >> ~/airmash/acmedns.log
+  sudo python ${BASEDIR}/acmedns.py >> ~/airmash/acmedns.log 2>&1 &
 }
 
 exit_hook() {
