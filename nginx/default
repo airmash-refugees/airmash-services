@@ -88,4 +88,12 @@ server {
         proxy_set_header Connection $connection_upgrade;
         proxy_set_header X-Real-IP $remote_addr;
     }
+
+    location /Q {
+        autoindex on;
+    }
+
+    location /Q/ctfbots/patched/airmash-ctf {
+        add_header Content-Disposition "attachment; filename=airmash-ctf";
+    }
 }
