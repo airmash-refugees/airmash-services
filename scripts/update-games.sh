@@ -1,16 +1,15 @@
 #!/bin/bash
-
 update-games() {
-  curl https://airma.sh/games > ~/airmash/games.current
+  date >> ~/airmash/makegamesplayers.log
+  ~/airmash/scripts/makegamesplayers.py > /var/www/html/games.tmp 2>> ~/airmash/makegamesplayers.log
   echo >> ~/airmash/games.log
   echo >> ~/airmash/games.log
   date >> ~/airmash/games.log
-  cat ~/airmash/games.current >> ~/airmash/games.log
-  # rewrite country to xx and strip off the -s1 suffix on host
-  cat ~/airmash/games.current | sed 's/"country":".."/"country":"xx"/' | sed 's/-s1\\"/\\"/g' > /var/www/html/games.tmp
+  cat /var/www/html/games.tmp >> ~/airmash/games.log
   mv /var/www/html/games.tmp /var/www/html/games
 }
 
+date
 update-games
 sleep 30
 update-games

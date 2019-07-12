@@ -9,7 +9,4 @@ run() {
 
 run html-tidy index
 run html-tidy changelog
-run html-tidy contact
-run html-tidy privacy 
 run js-beautify assets/engine.js
-run scripts/gamesdata.py games

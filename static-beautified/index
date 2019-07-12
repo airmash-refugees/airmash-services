@@ -3,10 +3,10 @@
 <head>
   <title>ΛIRMΛSH</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-  <link rel="stylesheet" href="/assets/style.css?6">
-  <link rel="stylesheet" href="/assets/flags.css?4">
-  <link rel="shortcut icon" type="image/png" sizes="64x64" href="/assets/favicon.png">
-  <script type="text/javascript" src="/assets/engine.js?6">
+  <link rel="stylesheet" href="assets/style.css?6">
+  <link rel="stylesheet" href="assets/flags.css?4">
+  <link rel="shortcut icon" type="image/png" sizes="64x64" href="assets/favicon.png">
+  <script type="text/javascript" src="assets/engine.js?7">
   </script>
   <meta name="description" content="Airmash is a multiplayer missile warfare browser game. Play now against other players around the world!">
   <meta name="keywords" content="airmash, missile warfare, game, games, multiplayer game, web game, html5 game">
@@ -30,7 +30,7 @@
   </div></noscript>
   <div id="login-ui">
     <div id="smallmenu">
-      <span class="greyedout">2017<span class="copyright">©</span></span><a href="/changelog" target="_blank" rel="noopener">Changelog</a><a href="https://www.reddit.com/r/airmash/" target="_blank" rel="noopener">Discussion</a><a href="/privacy" target="_blank" rel="noopener">Privacy</a><a href="/contact" target="_blank" rel="noopener">Contact</a>
+      <span class="greyedout">2017<span class="copyright">©</span></span><a href="changelog" target="_blank" rel="noopener">Changelog</a><a href="https://www.reddit.com/r/airmash/" target="_blank" rel="noopener">Discussion</a>
     </div>
     <div id="logout">
       &nbsp;
@@ -517,7 +517,7 @@
       Main Menu<span class="keybind" id="keybind-mainmenu">(F1)</span>
     </div>
     <div class="links">
-      <a href="/changelog" target="_blank" rel="noopener">Changelog</a><a href="https://www.reddit.com/r/airmash/" target="_blank" rel="noopener">Discussion</a><a href="/privacy" target="_blank" rel="noopener">Privacy</a><a href="/contact" target="_blank" rel="noopener">Contact</a>
+      <a href="changelog" target="_blank" rel="noopener">Changelog</a><a href="https://www.reddit.com/r/airmash/" target="_blank" rel="noopener">Discussion</a>
     </div>
     <div class="login" id="logout-mainmenu">
       You are not logged in

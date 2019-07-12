@@ -8,12 +8,11 @@
 </head>
 <body>
   <div class="topbar">
-    <div id="logo"></div>
+    <a href="/">
+    <div id="logo"></div></a>
     <div id="menu">
       <a class="sel" href="/changelog">Changelog
       <div class="arrow"></div></a><a href="https://www.reddit.com/r/airmash/" target="_blank" rel="noopener">Discussion
-      <div class="arrow"></div></a><a href="/privacy">Privacy Policy
-      <div class="arrow"></div></a><a href="/contact">Contact
       <div class="arrow"></div></a>
     </div>
   </div>

@@ -19896,7 +19896,7 @@ function() {
     }, Network.setup = function() {
         if (DEVELOPMENT) {
             r = -1 != document.domain.indexOf("192.168.") ? "ws://" + document.domain + ":8010/" + game.playPath : "ws://" + game.playHost + ".airmash.devel:8000/" + game.playPath
-        } else r = "wss://" + game.playHost + ".airmash.online/" + game.playPath;
+        } else r = "wss://" + game.playHost + "/" + game.playPath;
         t && n && t.close(), (e = new WebSocket(r)).binaryType = "arraybuffer", e.onopen = function() {
             E({
                 c: P.LOGIN,
@@ -22722,7 +22722,7 @@ function() {
     var e = !1,
         t = !1,
         n = !1,
-        r = ["", "Free For All", "Capture The Flag", "Battle Royale"],
+        r = ["", "Free For All", "Capture The Flag", "Battle Royale", "Development"],
         i = ["", "ffa", "ctf", "br"],
         o = 0,
         s = {},
@@ -22925,7 +22925,7 @@ function() {
         },
         M = function(e) {
             var t = '<div class="infott">';
-            return 1 == e ? t += "Everyone versus everyone deathmatch. No teams." : 2 == e ? t += "Players split into 2 teams. 2 flags are placed inside each base. The objective is to move the enemy flag from their base to your base." : 3 == e && (t += "Players spawn at random locations all across the map. Destroyed players will not respawn. Last player standing wins."), t += '<div class="arrow"></div></div>'
+            return 1 == e ? t += "Everyone versus everyone deathmatch. No teams." : 2 == e ? t += "Players split into 2 teams. 2 flags are placed inside each base. The objective is to move the enemy flag from their base to your base." : 3 == e ? t += "Players spawn at random locations all across the map. Destroyed players will not respawn. Last player standing wins." : 4 == e && (t += "Game environment for development and testing."), t += '<div class="arrow"></div></div>'
         };
     Games.updateType = function(n, o) {
         var s = "",
@@ -23033,7 +23033,7 @@ function() {
             else {
                 s[t].num++;
                 var r;
-                r = DEVELOPMENT ? "/ping" : "https://" + t + ".airmash.online/ping", R(t, r, function() {
+                r = DEVELOPMENT ? "/ping" : "https://" + t + "/ping", R(t, r, function() {
                     R(t, r)
                 })
             }
@@ -23043,21 +23043,18 @@ function() {
         if (null != s[e] && !c) {
             a++;
             var r = performance.now();
-            $.ajax({
-                url: t,
-                dataType: "json",
-                cache: !1,
-                timeout: 2e3,
-                success: function(t) {
-                    if (!c && (a--, 1 == t.pong && null != s[e])) {
-                        var i = performance.now() - r;
-                        if (Math.abs(s[e].ping - i) < .1 * i && s[e].threshold++, s[e].threshold >= 2) return i < s[e].ping && (p[s[e].server].ping = i, Games.findClosest(), Games.updateRegion()), void delete s[e];
-                        i < s[e].ping && (s[e].ping = i, p[s[e].server].ping = i, Games.findClosest(), Games.updateRegion(), null != n && n())
-                    }
-                },
-                error: function() {
-                    a--
+            fetch(t, {
+                method: "HEAD",
+                mode: "no-cors",
+                cache: "no-cache"
+            }).then(response => {
+                if (!c && (a--, null != s[e])) {
+                    var i = performance.now() - r;
+                    if (Math.abs(s[e].ping - i) < .1 * i && s[e].threshold++, s[e].threshold >= 2) return i < s[e].ping && (p[s[e].server].ping = i, Games.findClosest(), Games.updateRegion()), void delete s[e];
+                    i < s[e].ping && (s[e].ping = i, p[s[e].server].ping = i, Games.findClosest(), Games.updateRegion(), null != n && n())
                 }
+            }).catch(error => {
+                a--
             })
         }
     };
