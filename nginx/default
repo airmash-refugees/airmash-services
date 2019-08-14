@@ -65,6 +65,33 @@ server {
         add_header Access-Control-Allow-Origin *;
     }
 
+    http2_max_concurrent_pushes 32;
+
+    location = /index {
+        http2_push /assets/style.css?6;
+        http2_push /assets/flags.css?4;
+        http2_push /assets/engine.js?7;
+        http2_push /assets/montserrat-semibold.woff2;
+        http2_push /assets/map.json;
+        http2_push /assets/sounds.mp3?4;
+        http2_push /assets/map_sea.jpg;
+        http2_push /assets/map_sea_mask.jpg;
+        http2_push /assets/map_forest.jpg;
+        http2_push /assets/map_rock.jpg;
+        http2_push /assets/map_rock_mask.jpg;
+        http2_push /assets/map_sand.jpg;
+        http2_push /assets/map_sand_mask.jpg;
+        http2_push /assets/mountains.png;
+        http2_push /assets/aircraft.png;
+        http2_push /assets/shadows.png;
+        http2_push /assets/particles.png;
+        http2_push /assets/flagsbig.png?4;
+        http2_push /assets/items.png?2;
+        http2_push /assets/gui.png;
+        http2_push /assets/montserrat-bold.woff2;
+        http2_push /assets/favicon.png;
+    }
+
     location /games {
         proxy_pass http://localhost:2222/;
         proxy_http_version 1.1;
