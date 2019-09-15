@@ -40,15 +40,15 @@ for row in regions:
      "games" : regiongames[row[0]]})
 
 # games.txt format:
-#   0         1    2  3    4         5
-#   region_id|type|id|name|nameShort|host
+#   0         1    2  3    4         5    6
+#   region_id|type|id|name|nameShort|host|path
 games = parsetxt(scriptpath("../games.txt"))
 
 ua = {"User-Agent":"airmash.online frontend"}
 
 for row in games:
   log(row)
-  url = "https://" + row[5] + "/" + row[2].split('?')[0]
+  url = "https://" + row[5] + "/" + row[6]
   log(url)
   players = 0
   try:
@@ -64,7 +64,8 @@ for row in games:
      "name"      : row[3],
      "nameShort" : row[4],
      "players"   : players,
-     "host"      : row[5]})
+     "host"      : row[5],
+     "path"      : row[6]})
 
 j = {"data"     : jdump(data),
      "country"  : "xx",

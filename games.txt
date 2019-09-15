@@ -1,9 +1,9 @@
-eu|1|ffa?1|Free For All #1|FFA #1|eu-airmash1-foo.westeurope.cloudapp.azure.com
-eu|1|ffa?2|Free For All #2|FFA #2|game-eu-s1.airbattle.xyz
-eu|2|ctf?1|Capture The Flag #1|CTF #1|lags.win
-eu|2|ctf?2|Capture The Flag #2|CTF #2|game-eu-s1.airbattle.xyz
-eu|4|dev?1|Test Server #1|Test Server #1|eu-airmash1-foo.westeurope.cloudapp.azure.com
-eu|4|dev?2|Test Server #2|Test Server #2|uk.test.airmash.online
-us|1|ffa|Free For All|FFA|game.airmash.steamroller.tk
-us|2|ctf|Capture The Flag|CTF|game.airmash.steamroller.tk
-us|4|dev|Test Server|Test Server|game.airmash.steamroller.tk
+eu|1|ffa1|Free For All #1|FFA #1|eu-airmash1-foo.westeurope.cloudapp.azure.com|ffa
+eu|1|ffa2|Free For All #2|FFA #2|game-eu-s1.airbattle.xyz|ffa
+eu|2|ctf1|Capture The Flag #1|CTF #1|lags.win|ctf
+eu|2|ctf2|Capture The Flag #2|CTF #2|game-eu-s1.airbattle.xyz|ctf
+eu|4|dev1|Test Server #1|Test Server #1|eu-airmash1-foo.westeurope.cloudapp.azure.com|dev
+eu|4|dev2|Test Server #2|Test Server #2|uk.test.airmash.online|dev
+us|1|ffa|Free For All|FFA|game.airmash.steamroller.tk|ffa
+us|2|ctf|Capture The Flag|CTF|game.airmash.steamroller.tk|ctf
+us|4|dev|Test Server|Test Server|game.airmash.steamroller.tk|dev

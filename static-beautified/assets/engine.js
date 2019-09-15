@@ -23108,7 +23108,7 @@ function() {
                     o = u[Tools.randInt(0, u.length - 1)]
                 }
                 var d = S(game.playRegion, o);
-                game.playHost = d.host, game.playPath = d.id, game.regionName = E(game.playRegion).name, game.playRoom = o, game.state == Network.STATE.LOGIN && Tools.wipeReel(), game.state = Network.STATE.CONNECTING;
+                game.playHost = d.host, game.playPath = d.path, game.regionName = E(game.playRegion).name, game.playRoom = o, game.state == Network.STATE.LOGIN && Tools.wipeReel(), game.state = Network.STATE.CONNECTING;
                 var p = {
                     name: e
                 };
