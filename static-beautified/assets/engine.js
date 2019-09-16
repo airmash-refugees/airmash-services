@@ -22723,7 +22723,7 @@ function() {
         t = !1,
         n = !1,
         r = ["", "Free For All", "Capture The Flag", "Battle Royale", "Development"],
-        i = ["", "ffa", "ctf", "br"],
+        i = ["", "ffa", "ctf", "br", "dev"],
         o = 0,
         s = {},
         a = 0,
@@ -23105,7 +23105,7 @@ function() {
                     s = i.indexOf(o);
                 if (-1 != s) {
                     for (var a = E(game.playRegion).games, u = [], h = 0; h < a.length; h++) a[h].type == s && u.push(a[h].id);
-                    o = u[Tools.randInt(0, u.length - 1)]
+                    o = u[0]
                 }
                 var d = S(game.playRegion, o);
                 game.playHost = d.host, game.playPath = d.path, game.regionName = E(game.playRegion).name, game.playRoom = o, game.state == Network.STATE.LOGIN && Tools.wipeReel(), game.state = Network.STATE.CONNECTING;

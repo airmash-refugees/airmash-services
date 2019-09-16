@@ -70,7 +70,7 @@ server {
     location = /index {
         http2_push /assets/style.css?6;
         http2_push /assets/flags.css?4;
-        http2_push /assets/engine.js?10;
+        http2_push /assets/engine.js?11;
         http2_push /assets/montserrat-semibold.woff2;
         http2_push /assets/map.json;
         http2_push /assets/sounds.mp3?4;
