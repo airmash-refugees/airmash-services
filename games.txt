@@ -1,7 +1,6 @@
 eu|1|ffa1|Free For All #1|FFA #1|eu.airmash.online|ffa
 eu|1|ffa2|Free For All #2|FFA #2|eu-airmash1-foo.westeurope.cloudapp.azure.com|ffa
-eu|2|ctf1|Capture The Flag #1|CTF #1|eu.airmash.online|ctf
-eu|2|ctf2|Capture The Flag #2|CTF #2|lags.win|ctf
+eu|2|ctf1|Capture The Flag|CTF|lags.win|ctf
 eu|4|dev1|Test Server #1|Test Server #1|eu-airmash1-foo.westeurope.cloudapp.azure.com|dev
 eu|4|dev2|Test Server #2|Test Server #2|uk.test.airmash.online|dev
 us|1|ffa|Free For All|FFA|game.airmash.steamroller.tk|ffa
