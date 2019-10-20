@@ -1,4 +1,5 @@
-eu|1|ffa1|Free For All #1|FFA #1|eu.airmash.online|ffa
+eu|1|ffa1|Free For All #1|FFA #1|eu.airmash.online|ffa1
+eu|1|ffa2|Free For All #2|FFA #2|eu.airmash.online|ffa2
 eu|2|ctf1|Capture The Flag #1|CTF #1|lags.win|ctf
 eu|4|dev2|Test Server|Test Server|uk.test.airmash.online|dev
 us|1|ffa|Free For All|FFA|game.airmash.steamroller.tk|ffa
