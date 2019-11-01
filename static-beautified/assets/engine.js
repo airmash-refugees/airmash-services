@@ -19905,7 +19905,7 @@ function() {
                 session: config.settings.session ? config.settings.session : "none",
                 horizonX: Math.ceil(game.halfScreenX / game.scale),
                 horizonY: Math.ceil(game.halfScreenY / game.scale),
-                flag: game.myFlag
+                flag: game.myFlag.toUpperCase()
             })
         }, e.onclose = function() {
             null != o && clearInterval(o), game.state !== Network.STATE.CONNECTING && (game.state = Network.STATE.CONNECTING, !1 === p && Network.reconnectMessage())
