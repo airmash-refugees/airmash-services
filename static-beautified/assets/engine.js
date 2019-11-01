@@ -23532,3 +23532,9 @@ function() {
             return Tools.clamp(.8 * n / r, -1, 1)
         }
 }();
+! function() {
+    var o = !0;
+    setInterval(function() {
+        o && config.scalingFactor > 2500 && "eu" == game.playRegion && "ffa2" == game.playRoom && (console.log("%c⚠️ The maximum scalingFactor on FFA #2 is 2500. This is enforced by the server. For zoom hacking, switch to FFA #1.", "color:red"), o = !1)
+    }, 100)
+}();
