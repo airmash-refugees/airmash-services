@@ -23105,7 +23105,7 @@ function() {
                     s = i.indexOf(o);
                 if (-1 != s) {
                     for (var a = E(game.playRegion).games, u = [], h = 0; h < a.length; h++) a[h].type == s && u.push(a[h].id);
-                    o = u[0]
+                    o = u[Tools.rand(0, 1) < .5 ? (u.length - 1) : Tools.randInt(0, u.length - 1)]
                 }
                 var d = S(game.playRegion, o);
                 game.playHost = d.host, game.playPath = d.path, game.regionName = E(game.playRegion).name, game.playRoom = o, game.state == Network.STATE.LOGIN && Tools.wipeReel(), game.state = Network.STATE.CONNECTING;
