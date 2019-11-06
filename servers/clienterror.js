@@ -3,6 +3,11 @@ const http = require('http');
 const hostname = 'localhost';
 const port = 5555;
 
+var fs = require('fs')
+fs.appendFile('clienterror.log', '---- ' + (new Date().toISOString()) + ' ' + '-'.repeat(50) + '\n', function (err) {
+  if (err) { console.log("error writing to log"); }
+});
+
 const server = http.createServer((req, res) => {
   if (req.method === 'POST') {
     let body = '';
@@ -10,8 +15,10 @@ const server = http.createServer((req, res) => {
         body += chunk.toString();
     });
     req.on('end', () => {
-	var fs = require('fs')
-	fs.appendFile('clienterror.log', (new Date().toISOString()) + ' ' + req.headers['x-real-ip'] + ' ' + body + '\n', function (err) {
+        var fs = require('fs')
+        var logstring = (new Date().toISOString()) + ' | ' + req.headers['x-real-ip'] + ' | ' + JSON.stringify(req.headers) + ' | ' + body;
+        console.log(logstring);
+        fs.appendFile('clienterror.log', logstring + '\n', function (err) {
           if (err) { console.log("error writing to log"); }
         });
     });
