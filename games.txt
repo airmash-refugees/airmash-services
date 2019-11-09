@@ -3,5 +3,6 @@ eu|1|ffa2|Free For All #2|FFA #2|eu.airmash.online|ffa2
 eu|2|ctf1|Capture The Flag #1|CTF #1|lags.win|ctf
 eu|4|dev-nfb|No flying backwards|No flying backwards|uk.test.airmash.online|dev1
 us|1|ffa|Free For All|FFA|game.airmash.steamroller.tk|ffa
-us|2|ctf|Capture The Flag|CTF|game.airmash.steamroller.tk|ctf
+us|2|ctf1|Capture The Flag #1|CTF #1|game.airmash.steamroller.tk|ctf
+us|2|ctf2|Capture The Flag #2|CTF #2|www.airmash.xyz|ctf1
 us|4|dev|Test Server|Test Server|game.airmash.steamroller.tk|dev
