@@ -52,7 +52,7 @@ for row in games:
   log(url)
   players = 0
   try:
-    j = json.loads(urlopen(Request(url, headers=ua)).read())
+    j = json.loads(urlopen(Request(url, headers=ua), timeout=5).read())
     players = int(j['players'])
   except Exception as e:
     traceback.print_exc()
