@@ -62,15 +62,16 @@ server {
 
     location / {
         try_files $uri $uri/ =404;
-        add_header Access-Control-Allow-Origin *;
+    }
+
+    location /ideas {
+        return 302 https://github.com/airmash-refugees/game-ideas/issues;
     }
 
     http2_max_concurrent_pushes 32;
 
     location = /index {
-        http2_push /assets/style.css?6;
         http2_push /assets/flags.css?4;
-        http2_push /assets/engine.js?12;
         http2_push /assets/montserrat-semibold.woff2;
         http2_push /assets/map.json;
         http2_push /assets/sounds.mp3?4;
@@ -98,6 +99,8 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
         proxy_set_header X-Real-IP $remote_addr;
+        add_header Cache-Control "no-store";
+        add_header Access-Control-Allow-Origin *;
     }
 
     location /enter {
