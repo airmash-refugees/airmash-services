@@ -47,7 +47,7 @@ const db = require('better-sqlite3')('players.db');
 db.pragma('journal_mode = WAL');
 db.pragma('synchronous = FULL');
 
-const stmtGetClientSettings = db.prepare('select client_settings from players where client_token = ?');
+const stmtGetClientSettings = db.prepare('select client_settings, client_token from players where client_token = ?');
 const stmtSetClientSettings = db.prepare('update players set client_settings = ? where client_token = ?');
 
 /*
@@ -172,8 +172,12 @@ app.post('/', (req, res) => {
     let result = 1;
     try {
       let json = JSON.stringify(filterSettings(settings));
-      log(req.reqid, 'settings write', json);
-      stmtSetClientSettings.run(json, player.client_token);
+      log(req.reqid, 'settings write', json, player.client_token);
+      let info = stmtSetClientSettings.run(json, player.client_token);
+      if (info.changes != 1) {
+        log(req.reqid, 'error', 'writing settings updated ' + info.changes + ' rows in player database');
+        result = 0;
+      }
     } catch(e) {
       log(req.reqid, 'error', 'settings write', JSON.stringify(errobj(e)));
       result = 0;
