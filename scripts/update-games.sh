@@ -1,15 +1,22 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+DIR=`dirname "$0"`
+
 update-games() {
-  date >> ~/airmash/makegamesplayers.log
-  ~/airmash/scripts/makegamesplayers.py > /var/www/html/games.tmp 2>> ~/airmash/makegamesplayers.log
-  echo >> ~/airmash/games.log
-  echo >> ~/airmash/games.log
-  date >> ~/airmash/games.log
-  cat /var/www/html/games.tmp >> ~/airmash/games.log
-  mv /var/www/html/games.tmp /var/www/html/games
+  date >> $DIR/../logs/makegamesplayers.log
+  $DIR/makegamesplayers.py >> $DIR/../logs/makegamesplayers.log 2>&1
+
+  date >> $DIR/../logs/gamesjson.log
+  cat $DIR/../data/games.json >> $DIR/../logs/gamesjson.log
+  echo >> $DIR/../logs/gamesjson.log
+
+  date >> $DIR/../logs/gamestestjson.log
+  cat $DIR/../data/games-test.json >> $DIR/../logs/gamestestjson.log
+  echo >> $DIR/../logs/gamestestjson.log
 }
 
 date
 update-games
-sleep 30
+sleep 25
+date
 update-games

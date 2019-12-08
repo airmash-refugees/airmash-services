@@ -21,54 +21,74 @@ def parsetxt(filename):
 def jdump(j):
   return json.dumps(j, separators=(',',':'))
 
+def writejsonfile(filename, data):
+  tmpfilename = filename + '.tmp'
+  f = open(tmpfilename, 'w')
+  f.write(jdump(data))
+  f.close()
+  os.rename(tmpfilename, filename)
+
 def scriptpath(relpath):
   return os.path.join(sys.path[0], relpath)
 
-# regions.txt format:
-#   0  1
-#   id|name
-regions = parsetxt(scriptpath("../regions.txt"))
+def datafromregions(regions):
+  # regions.txt format:
+  #   0  1
+  #   id|name
+  data = []
+  for row in regions:
+    log(row)
+    data.append(
+      {'name'  : row[1],
+       'id'    : row[0],
+       'games' : []})
+  return data
 
-data = []
-regiongames = {}
-for row in regions:
-  log(row)
-  regiongames[row[0]] = []
-  data.append(
-    {"name"  : row[1],
-     "id"    : row[0],
-     "games" : regiongames[row[0]]})
+def addgamestodata(data, games):
+  # games.txt format:
+  #   0         1    2  3    4         5    6
+  #   region_id|type|id|name|nameShort|host|path
+  ua = {'User-Agent':'airmash.online'}
+  for row in games:
+    log(row)
+    url = 'https://' + row[5] + '/' + row[6]
+    log(url)
+    players = None
+    try:
+      j = json.loads(urlopen(Request(url, headers=ua), timeout=5).read())
+      players = int(j['players'])
+    except Exception as e:
+      traceback.print_exc()
+    finally:
+      log(players)
+    for region in data:
+      if region['id'] == row[0]:
+        games = region['games']
+        game = {'type'      : int(row[1]),
+                'id'        : row[2],
+                'name'      : row[3],
+                'nameShort' : row[4],
+                'host'      : row[5],
+                'path'      : row[6]}
+        if players != None:
+          game['players'] = players
+        games.append(game)
 
-# games.txt format:
-#   0         1    2  3    4         5    6
-#   region_id|type|id|name|nameShort|host|path
-games = parsetxt(scriptpath("../games.txt"))
+log('---- regions ---')
+regions = parsetxt(scriptpath('../data/regions.txt'))
+data = datafromregions(regions)
 
-ua = {"User-Agent":"airmash.online frontend"}
+log('---- games ----')
+games = parsetxt(scriptpath('../data/games.txt'))
+addgamestodata(data, games)
+writejsonfile(scriptpath('../data/games.json'), data)
 
-for row in games:
-  log(row)
-  url = "https://" + row[5] + "/" + row[6]
-  log(url)
-  players = 0
-  try:
-    j = json.loads(urlopen(Request(url, headers=ua), timeout=5).read())
-    players = int(j['players'])
-  except Exception as e:
-    traceback.print_exc()
-  finally:
-    log(players)
-  regiongames[row[0]].append(
-    {"type"      : int(row[1]),
-     "id"        : row[2],
-     "name"      : row[3],
-     "nameShort" : row[4],
-     "players"   : players,
-     "host"      : row[5],
-     "path"      : row[6]})
-
-j = {"data"     : jdump(data),
-     "country"  : "xx",
-     "protocol" : 5}
-print(jdump(j))
+# additional servers
+log('---- games-test ----')
+try:
+  gamestest = parsetxt(scriptpath('../data/games-test.txt'))
+  addgamestodata(data, gamestest)
+except FileNotFoundError as e:
+  print('games-test skipped, source data not found')
+writejsonfile(scriptpath('../data/games-test.json'), data)
 
