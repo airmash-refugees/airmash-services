@@ -1,0 +1,77 @@
+# this was the old airmash.online site, before development switched to airmash-refugees/airmash-frontend
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name old.airmash.online;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options nosniff;
+
+    default_type text/html;
+
+    root /home/jam/repos/ao-frontend/static;
+    index index;
+    
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    http2_max_concurrent_pushes 32;
+
+    location = /index {
+        http2_push /assets/style.css?6;
+        http2_push /assets/flags.css?4;
+        http2_push /assets/engine.js?12;
+        http2_push /assets/montserrat-semibold.woff2;
+        http2_push /assets/map.json;
+        http2_push /assets/sounds.mp3?4;
+        http2_push /assets/map_sea.jpg;
+        http2_push /assets/map_sea_mask.jpg;
+        http2_push /assets/map_forest.jpg;
+        http2_push /assets/map_rock.jpg;
+        http2_push /assets/map_rock_mask.jpg;
+        http2_push /assets/map_sand.jpg;
+        http2_push /assets/map_sand_mask.jpg;
+        http2_push /assets/mountains.png;
+        http2_push /assets/aircraft.png;
+        http2_push /assets/shadows.png;
+        http2_push /assets/particles.png;
+        http2_push /assets/flagsbig.png?4;
+        http2_push /assets/items.png?2;
+        http2_push /assets/gui.png;
+        http2_push /assets/montserrat-bold.woff2;
+        http2_push /assets/favicon.png;
+    } 
+
+    location /games {
+        proxy_pass http://localhost:2222/;
+        proxy_http_version 1.1;
+        proxy_set_header X-Real-IP $remote_addr;
+        add_header Cache-Control no-store;
+    }
+
+    location /enter {
+        proxy_pass http://localhost:3333/;
+        proxy_http_version 1.1;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /clienterror {
+        proxy_pass http://localhost:5555/;
+        proxy_http_version 1.1;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /assets {
+        autoindex on;
+    }
+
+    location /Q {
+        autoindex on;
+    }
+
+    location /Q/ctfbots/patched/airmash-ctf {
+    	add_header Content-Disposition "attachment; filename=airmash-ctf";
+    }
+}
