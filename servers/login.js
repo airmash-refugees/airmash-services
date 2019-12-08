@@ -5,8 +5,11 @@ const crypto = require('crypto');
 const fs = require('fs');
 const https = require('https');
 const url = require('url');
+const path = require('path');
 
 const app = express()
+app.disable('x-powered-by');
+
 
 /*
  *  External and internal endpoints, needs to match nginx configuration
@@ -15,6 +18,7 @@ const app = express()
 const baseUrl = 'https://login.airmash.online';
 const loginPath = "/login"
 const callbackPath = "/login/callback"
+const keyPath = "/key"
 
 const hostname = 'localhost';
 const port = 4444;
@@ -25,21 +29,29 @@ const permittedOrigins = [
 ];
 
 /*
+ *  Data file paths
+ */
+
+const secretsPath = path.resolve(__dirname, '../data/secrets.json')
+const playersDatabasePath = path.resolve(__dirname, '../data/players.db')
+
+/*
  *  Logging helper
  */
 
-const logfile = 'login.log';
+const logfile = path.resolve(__dirname, '../logs', path.basename(__filename, '.js') + '.log');
 
-var errobj = function(err) {
+var errstr = function(err) {
   let obj = {};
   Object.getOwnPropertyNames(err).forEach(name => obj[name] = err[name]);
-  return obj;
+  return JSON.stringify(obj);
 }
 
 var log = function() {
-  let msg = (new Date().toISOString()) + ' | ' + [...arguments].join(' | ') + '\n';
-  fs.appendFile(logfile, msg, e => {
-    e && console.error(`error writing to log\n  ${JSON.stringify(errobj(e))}\n  ${msg}`);
+  let parts = [...arguments].map(part => part instanceof Error ? errstr(part) : part);
+  let msg = (new Date().toISOString()) + ' | ' + parts.join(' | ') + '\n';
+  fs.appendFileSync(logfile, msg, e => {
+    console.error(`error writing to log:\n  ${errstr(e)}\n  ${msg}`);
   });
 }
 
@@ -47,32 +59,41 @@ var log = function() {
  *  Set up player database
  */
 
-const db = require('better-sqlite3')('players.db');
-db.pragma('journal_mode = WAL');
+const db = require('better-sqlite3')(playersDatabasePath);
 db.pragma('synchronous = FULL');
 
-db.exec("create table if not exists players ( player_id text not null primary key, external_id text not null unique, client_token text not null unique, client_settings text )");
+db.exec("create table if not exists users ( user_id text not null primary key, external_id text not null unique )");
 
-const stmtGetPlayerDetailsFromExternalId = db.prepare('select player_id, client_token from players where external_id = ?');
-const stmtSetPlayerDetailsForExternalId = db.prepare('insert into players (player_id, external_id, client_token) values (?,?,?)');
+const stmtGetUserIdFromExternalId = db.prepare('select user_id from users where external_id = ?');
+const stmtSetUserIdForExternalId = db.prepare('insert into users (user_id, external_id) values (?,?)');
 
 /*
  *  Helper function to look up identity in player database
  */
 
-var getPlayerDetailsFromExternalId = function(provider, uniqueid) {
-  let externalId = provider + ':' + uniqueid;
-  let player = stmtGetPlayerDetailsFromExternalId.get(externalId);
+var generateNewUserId = function() {
+  return crypto.randomBytes(16).toString('hex');
+};
 
-  // if not found, create player in database and associate with identity
-  if (player === undefined) {
-    let playerId = crypto.randomBytes(16).toString('hex');
-    let clientToken = Buffer.from(crypto.randomBytes(24)).toString('base64');
-    stmtSetPlayerDetailsForExternalId.run(playerId, externalId, clientToken);
-    player = stmtGetPlayerDetailsFromExternalId.get(externalId);
+var generateNewTimestamp = function() {
+  return Math.floor(new Date().getTime()/1000);
+};
+
+var getUserIdFromExternalId = function(provider, uniqueid) {
+  // external id is just the concatenation of provider id and an id unique to that provider
+  let externalId = provider + ':' + uniqueid;
+
+  // check if user already exists
+  let user = stmtGetUserIdFromExternalId.get(externalId);
+
+  // if not found, create new user in database and associate with external identity
+  if (user === undefined) {
+    let userId = generateNewUserId();
+    stmtSetUserIdForExternalId.run(userId, externalId);
+    user = stmtGetUserIdFromExternalId.get(externalId);
   }
 
-  return { playerid: player.player_id, clienttoken: player.client_token };
+  return user.user_id;
 }
 
 /*
@@ -95,7 +116,7 @@ var getIdentityFromIdToken = function(results, callback) {
       callback(idToken.sub, (idToken.email || idToken.sub));
     }
   } catch(e) {
-    log('error', 'identity from id_token', JSON.stringify(errobj(e)), JSON.stringify(results));
+    log('error', 'identity from id_token', e, JSON.stringify(results));
     callback(null);
   }
 };
@@ -131,7 +152,7 @@ var getIdentityFromReddit = function(results, callback) {
         });
       });
   } catch(e) {
-    log('error', 'identity from reddit', JSON.stringify(errobj(e)), JSON.stringify(results));
+    log('error', 'identity from reddit', e, JSON.stringify(results));
     callback(null);
   }
 };
@@ -158,7 +179,7 @@ var getIdentityFromTwitch = function(results, callback) {
         });
       }); 
   } catch(e) {
-    log('error', 'identity from twitch', JSON.stringify(errobj(e)), JSON.stringify(results));
+    log('error', 'identity from twitch', e, JSON.stringify(results));
     callback(null);
   } 
 };
@@ -237,26 +258,55 @@ const IdentityProviders = {
 };
 
 /*
- *  Read secrets from file and add to IdentityProviders
+ *  Read secrets from file, add to IdentityProviders and Ed25519SigningKey
  */
 
-fs.readFile('secrets.json', function (e, data) {
+let Ed25519SigningKey;
+
+fs.readFile(secretsPath, function (e, data) {
   if (e) {
-    log('error', 'reading secrets', JSON.stringify(errobj(e)));
+    log('error', 'reading secrets', e);
     throw e;
   } else {
     try {
       secrets = JSON.parse(data);
-      for (provider in secrets) {
-        for (propname in secrets[provider])
-          IdentityProviders[parseInt(provider)][propname] = secrets[provider][propname];
+
+      let idProvidersSecrets = secrets['IdentityProviders'];
+      for (provider in idProvidersSecrets) {
+        for (propname in idProvidersSecrets[provider]) {
+          IdentityProviders[parseInt(provider)][propname] = idProvidersSecrets[provider][propname];
+        }
       }
+
+      // as previously generated with scripts/generate-ed25519-keypair.js
+      Ed25519SigningKey = secrets['Ed25519SigningKey']; // also includes public key, which isn't a secret
+      Ed25519SigningKey.private = crypto.createPrivateKey({
+        key: Buffer.from(Ed25519SigningKey.private, 'base64'),
+        format: 'der',
+        type: 'pkcs8'
+      });
     } catch(e) {
-      log('error', 'adding secrets', JSON.stringify(errobj(e)));
+      log('error', 'adding secrets', e);
       throw e;  
     }
   }
 });
+
+/*
+ *  Helper function to generate signed token for a particular purpose
+ */
+
+var generateSignedToken = function(userId, timestamp, purpose) {
+  let data = Buffer.from(JSON.stringify({
+    uid: userId,
+    ts: timestamp, 
+    for: purpose
+  }));
+
+  let signature = crypto.sign(null, data, Ed25519SigningKey.private);
+
+  return data.toString('base64') + '.' + signature.toString('base64');
+};
 
 /*
  *  Helper function to generate HTML for error page
@@ -272,12 +322,12 @@ var errorPage = function(msg) {
  *  Helper function to generate HTML for debug info
  */
 
-var debugHtml = function(session, player, provider, displayName, uniqueId, results) {
+var debugHtml = function(session, player, provider, displayName, uniqueId, results, tokens) {
   return '<code style="word-wrap:break-word;white-space:pre">you are logged in 😊<br/><br/>' + 
          '<a href="javascript:window.close();">close window</a><br/><br/>' + 
          '------------------------<br/><br>' + 
          'nonce: ' + session.nonce + '<br/>' +
-         'playerid: ' + player.playerid + '<br/>' +
+         'userid: ' + player.userid + '<br/>' +
          'clienttoken: ' + player.clienttoken + '<br/>' +
          'provider: ' + session.provider + ' (' + provider.name + ')<br/>' +
          'loginname: ' + displayName + '<br/>' +
@@ -285,6 +335,8 @@ var debugHtml = function(session, player, provider, displayName, uniqueId, resul
 //         'external_id: ' + session.provider + ':' + uniqueId + '<br/>' +
 //         '<br/>' +
 //         'results: ' + JSON.stringify(results, null, 2) + 
+         '<br/>' +
+         'tokens: ' + JSON.stringify(tokens, null, 2) + 
          '</code>';
 }
 
@@ -309,9 +361,25 @@ app.use(session({
 
 var nextreqid = 1;
 app.use((req, res, next) => {
+  // nginx passes in remote IP address in X-Real-IP header 
+  //   ("proxy_set_header X-Real-IP $remote_addr" in its configuration)
+  req.realip = req.headers['x-real-ip'] || req.connection.remoteAddress;
+
+  // request id for log entry correlation
   req.reqid = nextreqid++;
-  log(req.reqid, 'request', req.headers['x-real-ip'], req.method, req.url, JSON.stringify(req.headers));
+
+  log(req.reqid, 'request', req.realip, req.method, req.url, JSON.stringify(req.headers));
   next();
+});
+
+/*
+ *  GET https://login.airmash.online/key
+ */
+
+app.get(keyPath, (req, res) => {
+  res.status(200).type('json').end(JSON.stringify({
+    key: Ed25519SigningKey.public
+  }));
 });
 
 /*
@@ -426,7 +494,7 @@ app.get(loginPath, (req, res) => {
         break;
     }
   } catch (e) {
-    log(req.reqid, 'error', 'login', JSON.stringify(errobj(e)));
+    log(req.reqid, 'error', 'login', e);
     res.send(errorPage('internal error 😟')).status(500).end();
   }
 });
@@ -443,7 +511,6 @@ app.get(callbackPath, (req, res) => {
     if (!session.valid) {
       return res.send(errorPage('session expired 😱')).status(400).end();
     }
-
     let provider = IdentityProviders[session.provider];
     if (provider === undefined) {
       return res.send(errorPage('invalid provider 😢')).status(400).end();
@@ -471,24 +538,7 @@ app.get(callbackPath, (req, res) => {
               return res.send(errorPage('error retrieving access token 😟')).status(500).end();
             } else {
               provider.identityFunction(results, (uniqueId, displayName) => {
-                if (uniqueId == null) {
-                  return res.send(errorPage('error retrieving identity 😟')).status(500).end();
-                }
-                let player = getPlayerDetailsFromExternalId(session.provider, uniqueId);
-                let html = '<html><head><script type="text/javascript">function closePopup(){window.opener.postMessage(' + 
-                      JSON.stringify({
-                        nonce: session.nonce,
-                        playerid: player.playerid,
-                        clienttoken: player.clienttoken,
-                        provider: session.provider,
-                        loginname: displayName,
-                      }) +
-                      ',"' + session.origin + '");' + (!session.debug ? 'window.close();' : '') + 
-                    '}</script></head><body onload="closePopup()">' + 
-                      (session.debug ? debugHtml(session, player, provider, displayName, uniqueId, results) : '') +
-                    '</body></html>';
-                session.destroy();
-                return res.status(200).clearCookie('session').type('html').send(html).end();
+                commonIdentityFunctionCallback(res, session, provider, displayName, uniqueId, results);
               });
             }
           });
@@ -496,11 +546,9 @@ app.get(callbackPath, (req, res) => {
 
       case 2:
         // are required parameters present and correct?
-
         if (req.query.state === undefined || session.state !== req.query.state) {
           return res.send(errorPage('invalid state 😢')).status(400).end();
         }
-
         if (req.query.code === undefined || typeof req.query.code !== 'string') {
           return res.send(errorPage('invalid code 😢')).status(400).end();
         }
@@ -519,25 +567,9 @@ app.get(callbackPath, (req, res) => {
               return res.send(errorPage('error retrieving access token 😟')).status(500).end();
             } else {
               provider.identityFunction(results, (uniqueId, displayName) => {
-                if (uniqueId == null) {
-                  return res.send(errorPage('error retrieving identity 😟')).status(500).end();
-                }
-                let player = getPlayerDetailsFromExternalId(session.provider, uniqueId);
-                let html = '<html><head><script type="text/javascript">function closePopup(){window.opener.postMessage(' + 
-                      JSON.stringify({
-                        nonce: session.nonce,
-                        playerid: player.playerid,
-                        clienttoken: player.clienttoken,
-                        provider: session.provider,
-                        loginname: displayName,
-                      }) +
-                      ',"' + session.origin + '");' + (!session.debug ? 'window.close();' : '') + 
-                    '}</script></head><body onload="closePopup()">' + 
-                      (session.debug ? debugHtml(session, player, provider, displayName, uniqueId, results) : '') +
-                    '</body></html>';
-                session.destroy();
-                return res.status(200).clearCookie('session').type('html').send(html).end();
-              });            }
+                commonIdentityFunctionCallback(res, session, provider, displayName, uniqueId, results);
+              });
+            }
           });
         break;
 
@@ -545,10 +577,45 @@ app.get(callbackPath, (req, res) => {
         return res.send(errorPage('invalid provider data 😟')).status(400).end();
     }
   } catch (e) {
-    log(req.reqid, 'error', 'login callback', JSON.stringify(errobj(e)));
+    log(req.reqid, 'error', 'login callback', e);
     return res.send(errorPage('internal error 😟')).status(500).end();
   }
 });
+
+/*
+ *  Handler for identity function results is common to both OAuth versions
+ */
+
+var commonIdentityFunctionCallback = function(res, session, provider, displayName, uniqueId, results) {
+  if (uniqueId == null) {
+    return res.send(errorPage('error retrieving identity 😟')).status(500).end();
+  }
+
+  let userId = getUserIdFromExternalId(session.provider, uniqueId);
+
+  let timestamp = generateNewTimestamp();
+
+  let tokens = {
+    settings: generateSignedToken(userId, timestamp, "settings"),
+    game: generateSignedToken(userId, timestamp, "game")
+  };
+
+  let html = '<html><head><script type="text/javascript">function closePopup(){window.opener.postMessage(' + 
+        JSON.stringify({
+          nonce: session.nonce,
+          tokens,
+          provider: session.provider,
+          loginname: displayName,
+        }) +
+        ',"' + session.origin + '");' + (!session.debug ? 'window.close();' : '') + 
+      '}</script></head><body onload="closePopup()">' + 
+        (session.debug ? debugHtml(session, userId, provider, displayName, uniqueId, results, tokens) : '') +
+      '</body></html>';
+
+  session.destroy();
+
+  return res.status(200).clearCookie('session').type('html').send(html).end();
+};
 
 /*
  *  Default route
@@ -556,6 +623,15 @@ app.get(callbackPath, (req, res) => {
 
 app.use(function (req, res) {
   res.location('https://airmash.online').status(302).end();
+});
+
+/*
+ *  Error handling
+ */
+
+app.use(function(err, req, res, next) {
+  log(req.reqid, 'error', 'default handler', e);
+  res.status(500).end();
 });
 
 /*
