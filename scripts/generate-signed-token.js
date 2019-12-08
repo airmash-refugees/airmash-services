@@ -29,7 +29,7 @@ var generateSignedToken = function(userId, timestamp, purpose) {
 
   let signature = crypto.sign(null, data, Ed25519SigningKey.private);
 
-  return data.toString('base64') + '.' + signature.toString('base64');
+  return (data.toString('base64') + '.' + signature.toString('base64')).replace(/=/g,'');
 };
 
 let Ed25519SigningKey;
