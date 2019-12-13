@@ -117,6 +117,10 @@ var getUserIdFromAuthToken = function(req) {
     return null;
   }
 
+  if (typeof auth !== 'object' || auth === null) {
+    log(req.reqid, 'error', 'authentication data must be a non-null object', JSON.stringify(data));
+    return null;
+  }
   // user id, timestamp, and purpose must be specified in token
   if (undefined === auth.uid ||
       undefined === auth.ts || 
