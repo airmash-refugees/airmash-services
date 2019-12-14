@@ -72,7 +72,7 @@ const stmtSetUserIdForExternalId = db.prepare('insert into users (user_id, exter
  */
 
 var generateNewUserId = function() {
-  return crypto.randomBytes(16).toString('hex');
+  return crypto.randomBytes(8).toString('hex');
 };
 
 var generateNewTimestamp = function() {
