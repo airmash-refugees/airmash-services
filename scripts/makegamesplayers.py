@@ -12,6 +12,8 @@ def parsetxt(filename):
   f = open(filename)
   d = f.read()
   f.close()
+  if len(d) == 0:
+    return []
   if d[-1]=='\n':
     d = d[:-1]
   d = d.split('\n')
