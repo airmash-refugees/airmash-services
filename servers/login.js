@@ -26,6 +26,7 @@ const port = 4444;
 const permittedOrigins = [ 
   'https://airmash.online',
   'https://test.airmash.online',
+  'https://starmash.test.airmash.online',
   'https://spatiebot.github.io'
 ];
 
