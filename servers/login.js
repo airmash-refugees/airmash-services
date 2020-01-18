@@ -297,11 +297,12 @@ fs.readFile(secretsPath, function (e, data) {
  *  Helper function to generate signed token for a particular purpose
  */
 
-var generateSignedToken = function(userId, timestamp, purpose) {
+var generateSignedToken = function(userId, timestamp, purpose, origin) {
   let data = Buffer.from(JSON.stringify({
     uid: userId,
     ts: timestamp, 
-    for: purpose
+    for: purpose,
+    origin
   }));
 
   let signature = crypto.sign(null, data, Ed25519SigningKey.private);
@@ -455,7 +456,7 @@ app.get(loginPath, (req, res) => {
     // save parameters in session
 
     session.nonce = req.query.nonce;
-    session.origin = req.query.origin;
+    session.origin = req.query.origin.toLowerCase();
     session.provider = parseInt(req.query.provider);
 
     switch (provider.oAuthVersion) {
@@ -539,7 +540,7 @@ app.get(callbackPath, (req, res) => {
               return res.send(errorPage('error retrieving access token 😟')).status(500).end();
             } else {
               provider.identityFunction(results, (uniqueId, displayName) => {
-                commonIdentityFunctionCallback(res, session, provider, displayName, uniqueId, results);
+                commonIdentityFunctionCallback(res, session, provider, displayName, uniqueId, session.origin, results);
               });
             }
           });
@@ -568,7 +569,7 @@ app.get(callbackPath, (req, res) => {
               return res.send(errorPage('error retrieving access token 😟')).status(500).end();
             } else {
               provider.identityFunction(results, (uniqueId, displayName) => {
-                commonIdentityFunctionCallback(res, session, provider, displayName, uniqueId, results);
+                commonIdentityFunctionCallback(res, session, provider, displayName, uniqueId, session.origin, results);
               });
             }
           });
@@ -587,7 +588,7 @@ app.get(callbackPath, (req, res) => {
  *  Handler for identity function results is common to both OAuth versions
  */
 
-var commonIdentityFunctionCallback = function(res, session, provider, displayName, uniqueId, results) {
+var commonIdentityFunctionCallback = function(res, session, provider, displayName, uniqueId, origin, results) {
   if (uniqueId == null) {
     return res.send(errorPage('error retrieving identity 😟')).status(500).end();
   }
@@ -597,8 +598,8 @@ var commonIdentityFunctionCallback = function(res, session, provider, displayNam
   let timestamp = generateNewTimestamp();
 
   let tokens = {
-    settings: generateSignedToken(userId, timestamp, "settings"),
-    game: generateSignedToken(userId, timestamp, "game")
+    settings: generateSignedToken(userId, timestamp, "settings", origin),
+    game: generateSignedToken(userId, timestamp, "game", origin)
   };
 
   let html = '<html><head><script type="text/javascript">function closePopup(){window.opener.postMessage(' + 
