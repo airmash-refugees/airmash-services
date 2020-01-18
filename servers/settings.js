@@ -63,7 +63,7 @@ var loginPublicKey;
  *  Upper limit on settings data, per player
  */
 
-const SETTINGS_MAX_SIZE = 1024;
+const SETTINGS_MAX_SIZE = 8192;
 
 /*
  *  Log all requests to this service for debugging purposes
@@ -121,6 +121,7 @@ var getUserIdFromAuthToken = function(req) {
     log(req.reqid, 'error', 'authentication data must be a non-null object', JSON.stringify(data));
     return null;
   }
+  
   // user id, timestamp, and purpose must be specified in token
   if (undefined === auth.uid ||
       undefined === auth.ts || 
