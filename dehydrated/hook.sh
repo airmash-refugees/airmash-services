@@ -187,9 +187,9 @@ startup_hook() {
   # This hook is called before the cron command to do some initial tasks
   # (e.g. starting a webserver).
   rm acmedns.txt 2> /dev/null
-  echo ==================== >> ~/airmash/acmedns.log
-  date >> ~/airmash/acmedns.log
-  sudo python ${BASEDIR}/acmedns.py >> ~/airmash/acmedns.log 2>&1 &
+  echo ==================== >> ~/airmash/logs/acmedns.log
+  date >> ~/airmash/logs/acmedns.log
+  sudo python ${BASEDIR}/acmedns.py >> ~/airmash/logs/acmedns.log 2>&1 &
 }
 
 exit_hook() {

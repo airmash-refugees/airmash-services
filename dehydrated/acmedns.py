@@ -46,4 +46,6 @@ t = threading.Thread(target=dns_server)
 t.daemon = True
 t.start()
 
+print("starting acmedns")
 time.sleep(60)
+print("stopping acmedns")
