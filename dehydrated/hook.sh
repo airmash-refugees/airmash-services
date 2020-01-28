@@ -69,12 +69,20 @@ deploy_cert() {
     sudo /usr/sbin/service nginx reload
     echo nginx reloaded
 
-    echo copying to aodev
-    scp -p /opt/dehydrated/certs/test.airmash.online/fullchain.pem jam@uk.test.airmash.online:~/airmash/nginx/certs/
-    scp -p /opt/dehydrated/certs/test.airmash.online/privkey.pem jam@uk.test.airmash.online:~/airmash/nginx/certs/
-    scp -p /opt/dehydrated/certs/test.airmash.online/chain.pem jam@uk.test.airmash.online:~/airmash/nginx/certs/
-    echo reloading nginx on aodev
-    ssh jam@uk.test.airmash.online sudo /usr/sbin/service nginx reload
+    echo copying to eu.ao
+    scp -p /opt/dehydrated/certs/airmash.online/fullchain.pem eu.airmash.online:~/airmash/nginx/certs/
+    scp -p /opt/dehydrated/certs/airmash.online/privkey.pem eu.airmash.online:~/airmash/nginx/certs/
+    scp -p /opt/dehydrated/certs/airmash.online/chain.pem eu.airmash.online:~/airmash/nginx/certs/
+    echo reloading nginx on eu.ao
+    ssh eu.airmash.online sudo /usr/sbin/service nginx reload
+
+    echo copying to us.ao
+    scp -p /opt/dehydrated/certs/airmash.online/fullchain.pem us.airmash.online:~/airmash/nginx/certs/
+    scp -p /opt/dehydrated/certs/airmash.online/privkey.pem us.airmash.online:~/airmash/nginx/certs/
+    scp -p /opt/dehydrated/certs/airmash.online/chain.pem us.airmash.online:~/airmash/nginx/certs/
+    echo reloading nginx on us.ao
+    ssh us.airmash.online sudo /usr/sbin/service nginx reload
+
 }
 
 deploy_ocsp() {
