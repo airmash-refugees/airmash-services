@@ -8,8 +8,8 @@ server {
 
     default_type text/html;
 
-    root /var/www/html;
-    index index;
+    root /home/jam/new.airmash.online;
+    index index.html;
     
     location / {
         try_files $uri $uri/ =404;
