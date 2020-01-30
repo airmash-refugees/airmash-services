@@ -100,7 +100,14 @@ app.get('/', asyncHandler(async (req, res) => {
   // development copy of the frontend or not
   let gamesDataPathToRead = gamesDataPath;
   let origin = req.headers['origin'];
-  if (origin && (origin === 'https://test.airmash.online' || /^http:\/\/127\.0\.0\.1:[0-9]{1,5}\/?$/m.test(origin)))
+  let referer = req.headers['referer'];
+  if (referer && referer === 'https://starmash.test.airmash.online/' || 
+      origin && (
+        origin === 'https://test.airmash.online' ||
+        origin.startsWith('https://') && origin.endsWith('.test.airmash.online') ||
+        origin === 'https://new.airmash.online' ||
+        /^http:\/\/127\.0\.0\.1:[0-9]{1,5}\/?$/m.test(origin)
+      ))
   {
     gamesDataPathToRead = gamesTestDataPath;
   }
