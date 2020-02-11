@@ -16,7 +16,7 @@ def parsetxt(filename):
     return []
   if d[-1]=='\n':
     d = d[:-1]
-  d = d.split('\n')
+  d = [r for r in d.split('\n') if r[0] != '#']
   d = [r.split('|') for r in d]
   return d
 
