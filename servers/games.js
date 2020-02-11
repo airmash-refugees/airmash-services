@@ -148,7 +148,7 @@ app.use(function (req, res) {
  */
 
 app.use(function(err, req, res, next) {
-  log(req.reqid, 'error', 'default handler', e);
+  log(req.reqid, 'error', 'default handler', err);
   res.status(500).end();
 });
 

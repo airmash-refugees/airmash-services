@@ -61,7 +61,7 @@ app.use(function (req, res) {
  */
 
 app.use(function(err, req, res, next) {
-  log(req.reqid, 'error', e);
+  log(req.reqid, 'error', err);
   res.status(500).end();
 });
 
