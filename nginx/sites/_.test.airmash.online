@@ -1,0 +1,16 @@
+# redirect any unused test sites to https://test.airmash.online
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name *.test.airmash.online;
+
+    ssl_certificate /opt/dehydrated/certs/test.airmash.online/fullchain.pem;
+    ssl_certificate_key /opt/dehydrated/certs/test.airmash.online/privkey.pem;
+    ssl_trusted_certificate /opt/dehydrated/certs/test.airmash.online/chain.pem;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options nosniff;
+
+    return 302 https://test.airmash.online;
+}
