@@ -5,14 +5,26 @@ server {
 
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
     add_header X-Content-Type-Options nosniff;
+    add_header Cache-Control "no-store";
+
+    proxy_http_version 1.1;
+
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-Proto $scheme;
 
     location / {
-        proxy_pass http://localhost:4444/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection $connection_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        add_header Cache-Control "no-store";
+        return 302 https://airmash.online;
+    }        
+
+    location = /key {
+        proxy_pass http://localhost:4100/key;
+    }
+
+    location = /login {
+        proxy_pass http://localhost:4101/login;
+    }
+
+    location = /login/callback {
+        proxy_pass http://localhost:4101/login/callback;
     }
 }

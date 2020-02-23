@@ -16,18 +16,18 @@ app.disable('x-powered-by');
  */
 
 const baseUrl = 'https://login.airmash.online';
-const loginPath = "/login"
-const callbackPath = "/login/callback"
-const keyPath = "/key"
+const loginPath = "/login";
+const callbackPath = "/login/callback";
 
 const hostname = 'localhost';
-const port = 4444;
+const port = 4101;
 
 const permittedOrigins = [ 
   'https://airmash.online',
   'https://test.airmash.online',
   'https://starmash.test.airmash.online',
-  'https://spatiebot.github.io'
+  'https://spatiebot.github.io',
+  'https://new.airmash.online'
 ];
 
 /*
@@ -78,7 +78,7 @@ var generateNewUserId = function() {
 };
 
 var generateNewTimestamp = function() {
-  return Math.floor(new Date().getTime()/1000);
+  return new Date().getTime();
 };
 
 var getUserIdFromExternalId = function(provider, uniqueid) {
@@ -271,11 +271,11 @@ fs.readFile(secretsPath, function (e, data) {
     throw e;
   } else {
     try {
-      secrets = JSON.parse(data);
+      let secrets = JSON.parse(data);
 
       let idProvidersSecrets = secrets['IdentityProviders'];
-      for (provider in idProvidersSecrets) {
-        for (propname in idProvidersSecrets[provider]) {
+      for (let provider in idProvidersSecrets) {
+        for (let propname in idProvidersSecrets[provider]) {
           IdentityProviders[parseInt(provider)][propname] = idProvidersSecrets[provider][propname];
         }
       }
@@ -376,16 +376,6 @@ app.use((req, res, next) => {
 });
 
 /*
- *  GET https://login.airmash.online/key
- */
-
-app.get(keyPath, (req, res) => {
-  res.status(200).type('json').end(JSON.stringify({
-    key: Ed25519SigningKey.public
-  }));
-});
-
-/*
  *  GET https://login.airmash.online/login
  */
 
@@ -396,19 +386,23 @@ app.get(loginPath, (req, res) => {
     // are required parameters present?
 
     if (req.query.provider === undefined) {
+      log(req.reqid, 'request error', 'provider required');
       return res.send(errorPage('provider required 😢')).status(400).end();
     }
 
     if (req.query.origin === undefined) {
+      log(req.reqid, 'request error', 'origin required');
       return res.send(errorPage('origin required 😢')).status(400).end();
     }
 
     if (req.query.nonce === undefined) {
+      log(req.reqid, 'request error', 'nonce required');
       return res.send(errorPage('nonce required 😢')).status(400).end();
     }
 
     for (let param in req.query) {
       if (!['provider','origin','nonce','debug'].includes(param)) {
+        log(req.reqid, 'request error', 'unrecognised query parameter');
         return res.send(errorPage('unrecognised query parameter 😢')).status(400).end();
       }
     }
@@ -416,16 +410,19 @@ app.get(loginPath, (req, res) => {
     // are required parameters correct?
 
     if (typeof req.query.provider !== 'string') {
+      log(req.reqid, 'request error', 'invalid provider');
       return res.send(errorPage('invalid provider 😢')).status(400).end();
     }
 
     let provider = IdentityProviders[parseInt(req.query.provider)];
     if (provider === undefined) {
+      log(req.reqid, 'request error', 'invalid provider');
       return res.send(errorPage('invalid provider 😢')).status(400).end();
     }
 
     let origin = req.query.origin;
     if (typeof origin !== 'string' || !(/^https?:\/\//m.test(origin))) {
+      log(req.reqid, 'request error', 'invalid origin');
       return res.send(errorPage('invalid origin 😢')).status(400).end();
     }
 
@@ -436,21 +433,25 @@ app.get(loginPath, (req, res) => {
         if (!req.query.debug || req.query.debug !== session.debugtoken) {
           session.debugtoken = crypto.randomBytes(16).toString('hex');
           let newurl = new URL(baseUrl + req.originalUrl);
+          log(req.reqid, 'localhost origin', 'debug session prompt');
           return res.send('<html><body><div style="position:absolute;top:50%;left:50%;transform:translateX(-50%) translateY(-50%);text-align:center">' + 
                           '<code><span style="font-size:500%">⚠️</span><br/><br/>your origin is local (' + req.query.origin + ')<br/>️️️<br/>' + 
                           '<a href="' + baseUrl + newurl.pathname + newurl.search + '&debug=' + session.debugtoken + '">continue</a> only if developer</code>' + 
                           '</div></body></html>').status(200).end();
         } else {
           // used in callback to display useful information for debugging
+          log(req.reqid, 'localhost origin', 'debug session confirmed');
           session.debug = true;
         }
       } else {
+        log(req.reqid, 'request error', 'origin not permitted');
         return res.send(errorPage('origin not permitted 🤔')).status(400).end();
       }
     }
 
     let nonce = req.query.nonce;
     if (typeof nonce !== 'string' || !(/^[0-9a-f]{32}$/im.test(nonce))) {
+      log(req.reqid, 'request error', 'invalid nonce');
       return res.send(errorPage('invalid nonce 😢')).status(400).end();
     }
 
@@ -493,6 +494,7 @@ app.get(loginPath, (req, res) => {
         break;
 
       default:
+        log(req.reqid, 'error', 'invalid provider data');
         res.send(errorPage('invalid provider data 😢')).status(400).end();
         break;
     }
@@ -512,10 +514,15 @@ app.get(callbackPath, (req, res) => {
 
     // session must have been set up in /login response and not expired in client
     if (!session.valid) {
+      try { 
+        session.destroy(); 
+      } catch(e) {}
+      log(req.reqid, 'request error', 'session expired');
       return res.send(errorPage('session expired 😱')).status(400).end();
     }
     let provider = IdentityProviders[session.provider];
     if (provider === undefined) {
+      log(req.reqid, 'request error', 'invalid provider');
       return res.send(errorPage('invalid provider 😢')).status(400).end();
     }
 
@@ -528,7 +535,8 @@ app.get(callbackPath, (req, res) => {
     switch (provider.oAuthVersion) {
       case 1:
         if (typeof req.query.oauth_token !== 'string' || typeof req.query.oauth_verifier !== 'string') {
-            return res.send(errorPage('invalid parameters 😢')).status(400).end();
+          log(req.reqid, 'request error', 'invalid oauth1 parameters');
+          return res.send(errorPage('invalid parameters 😢')).status(400).end();
         }
         let oa = new oauth.OAuth(null, provider.accessTokenUrl, provider.consumerKey, provider.consumerSecret, '1.0A', null, provider.signatureMethod);
         oa.getOAuthAccessToken(
@@ -541,7 +549,7 @@ app.get(callbackPath, (req, res) => {
               return res.send(errorPage('error retrieving access token 😟')).status(500).end();
             } else {
               provider.identityFunction(results, (uniqueId, displayName) => {
-                commonIdentityFunctionCallback(res, session, provider, displayName, uniqueId, session.origin, results);
+                commonIdentityFunctionCallback(req, res, session, provider, displayName, uniqueId, session.origin, results);
               });
             }
           });
@@ -550,9 +558,11 @@ app.get(callbackPath, (req, res) => {
       case 2:
         // are required parameters present and correct?
         if (req.query.state === undefined || session.state !== req.query.state) {
+          log(req.reqid, 'request error', 'invalid state');
           return res.send(errorPage('invalid state 😢')).status(400).end();
         }
         if (req.query.code === undefined || typeof req.query.code !== 'string') {
+          log(req.reqid, 'request error', 'invalid code');
           return res.send(errorPage('invalid code 😢')).status(400).end();
         }
 
@@ -570,13 +580,14 @@ app.get(callbackPath, (req, res) => {
               return res.send(errorPage('error retrieving access token 😟')).status(500).end();
             } else {
               provider.identityFunction(results, (uniqueId, displayName) => {
-                commonIdentityFunctionCallback(res, session, provider, displayName, uniqueId, session.origin, results);
+                commonIdentityFunctionCallback(req, res, session, provider, displayName, uniqueId, session.origin, results);
               });
             }
           });
         break;
 
       default:
+        log(req.reqid, 'error', 'invalid provider data');
         return res.send(errorPage('invalid provider data 😟')).status(400).end();
     }
   } catch (e) {
@@ -589,8 +600,9 @@ app.get(callbackPath, (req, res) => {
  *  Handler for identity function results is common to both OAuth versions
  */
 
-var commonIdentityFunctionCallback = function(res, session, provider, displayName, uniqueId, origin, results) {
+var commonIdentityFunctionCallback = function(req, res, session, provider, displayName, uniqueId, origin, results) {
   if (uniqueId == null) {
+    log(req.reqid, 'error', 'missing uniqueId');
     return res.send(errorPage('error retrieving identity 😟')).status(500).end();
   }
 
@@ -602,6 +614,8 @@ var commonIdentityFunctionCallback = function(res, session, provider, displayNam
     settings: generateSignedToken(userId, timestamp, "settings", origin),
     game: generateSignedToken(userId, timestamp, "game", origin)
   };
+
+  log(req.reqid, 'generated client tokens', userId, timestamp, origin);
 
   let html = '<html><head><script type="text/javascript">function closePopup(){window.opener.postMessage(' + 
         JSON.stringify({
@@ -625,7 +639,8 @@ var commonIdentityFunctionCallback = function(res, session, provider, displayNam
  */
 
 app.use(function (req, res) {
-  res.location('https://airmash.online').status(302).end();
+  log(req.reqid, 'warning', 'default route reached');
+  res.status(204).end();
 });
 
 /*
