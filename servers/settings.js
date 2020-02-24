@@ -198,7 +198,7 @@ app.get('/', (req, res) => {
   }
 
   let json;
-  if (data.client_settings) {
+  if (data && data.client_settings) {
     try {
       json = JSON.stringify(filterSettings(JSON.parse(data.client_settings)));
       log(req.reqid, 'settings read', json);
