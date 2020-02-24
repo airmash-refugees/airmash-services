@@ -69,20 +69,23 @@ deploy_cert() {
     sudo /usr/sbin/service nginx reload
     echo nginx reloaded
 
+    pushd /opt/airmash/dehydrated/certs/airmash.online
+
     echo copying to eu.ao
-    scp -p /opt/dehydrated/certs/airmash.online/fullchain.pem eu.airmash.online:~/airmash/nginx/certs/
-    scp -p /opt/dehydrated/certs/airmash.online/privkey.pem eu.airmash.online:~/airmash/nginx/certs/
-    scp -p /opt/dehydrated/certs/airmash.online/chain.pem eu.airmash.online:~/airmash/nginx/certs/
+    scp -p ./fullchain.pem eu.airmash.online:~/airmash/nginx/certs/
+    scp -p ./privkey.pem eu.airmash.online:~/airmash/nginx/certs/
+    scp -p ./chain.pem eu.airmash.online:~/airmash/nginx/certs/
     echo reloading nginx on eu.ao
     ssh eu.airmash.online sudo /usr/sbin/service nginx reload
 
     echo copying to us.ao
-    scp -p /opt/dehydrated/certs/airmash.online/fullchain.pem us.airmash.online:~/airmash/nginx/certs/
-    scp -p /opt/dehydrated/certs/airmash.online/privkey.pem us.airmash.online:~/airmash/nginx/certs/
-    scp -p /opt/dehydrated/certs/airmash.online/chain.pem us.airmash.online:~/airmash/nginx/certs/
+    scp -p ./fullchain.pem us.airmash.online:~/airmash/nginx/certs/
+    scp -p ./privkey.pem us.airmash.online:~/airmash/nginx/certs/
+    scp -p ./chain.pem us.airmash.online:~/airmash/nginx/certs/
     echo reloading nginx on us.ao
     ssh us.airmash.online sudo /usr/sbin/service nginx reload
 
+    popd
 }
 
 deploy_ocsp() {
@@ -195,9 +198,9 @@ startup_hook() {
   # This hook is called before the cron command to do some initial tasks
   # (e.g. starting a webserver).
   rm acmedns.txt 2> /dev/null
-  echo ==================== >> ~/airmash/logs/acmedns.log
-  date >> ~/airmash/logs/acmedns.log
-  sudo python ${BASEDIR}/acmedns.py >> ~/airmash/logs/acmedns.log 2>&1 &
+  echo ==================== >> /opt/airmash/logs/acmedns.log
+  date >> /opt/airmash/logs/acmedns.log
+  sudo python ${BASEDIR}/acmedns.py >> /opt/airmash/logs/acmedns.log 2>&1 &
 }
 
 exit_hook() {

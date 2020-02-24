@@ -13,9 +13,9 @@ server {
 
     return 204;
 
-    ssl_certificate /opt/dehydrated/certs/airmash.online/fullchain.pem;
-    ssl_certificate_key /opt/dehydrated/certs/airmash.online/privkey.pem;
-    ssl_trusted_certificate /opt/dehydrated/certs/airmash.online/chain.pem;
+    ssl_certificate /opt/airmash/dehydrated/certs/airmash.online/fullchain.pem;
+    ssl_certificate_key /opt/airmash/dehydrated/certs/airmash.online/privkey.pem;
+    ssl_trusted_certificate /opt/airmash/dehydrated/certs/airmash.online/chain.pem;
     ssl_dhparam /etc/nginx/dhparam.pem;
 
     ssl_session_timeout 1d;

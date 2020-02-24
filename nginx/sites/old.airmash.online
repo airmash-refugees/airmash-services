@@ -10,7 +10,7 @@ server {
 
     default_type text/html;
 
-    root /home/jam/repos/ao-frontend/static;
+    root /opt/airmash/www/old.airmash.online;
     index index;
     
     location / {
