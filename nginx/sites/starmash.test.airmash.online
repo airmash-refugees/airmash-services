@@ -22,6 +22,6 @@ server {
     }
 
     location /assets/engine.js {
-        return 301 https://congratulatio.github.io/StarWarsMod4AirMash/assets/engine.js;
+        return 302 https://airmash-refugees.github.io/StarWarsMod4AirMash/assets/engine.js;
     }
 }
