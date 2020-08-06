@@ -1,3 +1,5 @@
+const log = require('./common/logger');
+const paths = require('./common/paths');
 const express = require('express');
 const session = require('express-session');
 const oauth = require('oauth');
@@ -34,28 +36,8 @@ const permittedOrigins = [
  *  Data file paths
  */
 
-const secretsPath = path.resolve(__dirname, '../data/secrets.json')
-const playersDatabasePath = path.resolve(__dirname, '../data/players.db')
-
-/*
- *  Logging helper
- */
-
-const logfile = path.resolve(__dirname, '../logs', path.basename(__filename, '.js') + '.log');
-
-var errstr = function(err) {
-  let obj = {};
-  Object.getOwnPropertyNames(err).forEach(name => obj[name] = err[name]);
-  return JSON.stringify(obj);
-}
-
-var log = function() {
-  let parts = [...arguments].map(part => part instanceof Error ? errstr(part) : part);
-  let msg = (new Date().toISOString()) + ' | ' + parts.join(' | ') + '\n';
-  fs.appendFileSync(logfile, msg, e => {
-    console.error(`error writing to log:\n  ${errstr(e)}\n  ${msg}`);
-  });
-}
+const secretsPath = path.resolve(paths.data, 'secrets.json')
+const playersDatabasePath = path.resolve(paths.data, 'players.db')
 
 /*
  *  Set up player database

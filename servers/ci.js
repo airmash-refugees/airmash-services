@@ -1,3 +1,5 @@
+const log = require('./common/logger');
+const paths = require('./common/paths');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -18,27 +20,7 @@ const port = 9999;
  *  Data file paths
  */
 
-const deploymentsPath = path.resolve(__dirname, '../data/ci-deployments.json')
-
-/*
- *  Logging helper
- */
-
-const logfile = path.resolve(__dirname, '../logs', path.basename(__filename, '.js') + '.log');
-
-var errstr = function(err) {
-  let obj = {};
-  Object.getOwnPropertyNames(err).forEach(name => obj[name] = err[name]);
-  return JSON.stringify(obj);
-}
-
-var log = function() {
-  let parts = [...arguments].map(part => part instanceof Error ? errstr(part) : part);
-  let msg = (new Date().toISOString()) + ' | ' + parts.join(' | ') + '\n';
-  fs.appendFileSync(logfile, msg, e => {
-    console.error(`error writing to log:\n  ${errstr(e)}\n  ${msg}`);
-  });
-}
+const deploymentsPath = path.resolve(paths.data, 'ci-deployments.json')
 
 /*
  *  Log all requests to this service for debugging purposes
