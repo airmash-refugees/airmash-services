@@ -200,7 +200,7 @@ startup_hook() {
   rm acmedns.txt 2> /dev/null
   echo ==================== >> /opt/airmash/logs/acmedns.log
   date >> /opt/airmash/logs/acmedns.log
-  sudo python ${BASEDIR}/acmedns.py >> /opt/airmash/logs/acmedns.log 2>&1 &
+  sudo python3 ${BASEDIR}/acmedns.py >> /opt/airmash/logs/acmedns.log 2>&1 &
 }
 
 exit_hook() {

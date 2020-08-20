@@ -12,7 +12,7 @@ def read_zone():
     for i in range(0, len(lines)-1, 2):
         k = lines[i].strip()
         v = lines[i+1].strip()
-        if k[-1] <> '.':
+        if k[-1] != '.':
             k += '.'
         k = "_acme-challenge."+k.lower()
         if k in zone:
