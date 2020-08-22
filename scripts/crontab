@@ -1,2 +1,1 @@
-* * * * * /usr/bin/flock -w 0 /opt/airmash/data/update-games.lock /opt/airmash/scripts/update-games.sh >> /opt/airmash/logs/update-games.log 2>&1
 0 1 * * * /opt/airmash/dehydrated/dehydrated -c >> /opt/airmash/logs/dehydrated.log 2>&1
