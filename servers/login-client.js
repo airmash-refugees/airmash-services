@@ -1,12 +1,13 @@
 const log = require('./common/logger');
 const paths = require('./common/paths');
+const db = require('./common/database');
+const token = require('./common/token');
 const express = require('express');
 const session = require('express-session');
 const oauth = require('oauth');
 const crypto = require('crypto');
 const fs = require('fs');
 const https = require('https');
-const url = require('url');
 const path = require('path');
 
 const app = express()
@@ -37,19 +38,6 @@ const permittedOrigins = [
  */
 
 const secretsPath = path.resolve(paths.data, 'secrets.json')
-const playersDatabasePath = path.resolve(paths.data, 'players.db')
-
-/*
- *  Set up player database
- */
-
-const db = require('better-sqlite3')(playersDatabasePath);
-db.pragma('synchronous = FULL');
-
-db.exec("create table if not exists users ( user_id text not null primary key, external_id text not null unique )");
-
-const stmtGetUserIdFromExternalId = db.prepare('select user_id from users where external_id = ?');
-const stmtSetUserIdForExternalId = db.prepare('insert into users (user_id, external_id) values (?,?)');
 
 /*
  *  Helper function to look up identity in player database
@@ -68,13 +56,13 @@ var getUserIdFromExternalId = function(provider, uniqueid) {
   let externalId = provider + ':' + uniqueid;
 
   // check if user already exists
-  let user = stmtGetUserIdFromExternalId.get(externalId);
+  let user = db.users.getUserByExternalId(externalId);
 
   // if not found, create new user in database and associate with external identity
   if (user === undefined) {
     let userId = generateNewUserId();
-    stmtSetUserIdForExternalId.run(userId, externalId);
-    user = stmtGetUserIdFromExternalId.get(externalId);
+    db.users.addUser(userId, externalId);
+    user = db.users.getUserByExternalId(externalId);
   }
 
   return user.user_id;
@@ -242,10 +230,8 @@ const IdentityProviders = {
 };
 
 /*
- *  Read secrets from file, add to IdentityProviders and Ed25519SigningKey
+ *  Read IdentityProviders from secrets file
  */
-
-let Ed25519SigningKey;
 
 fs.readFile(secretsPath, function (e, data) {
   if (e) {
@@ -261,37 +247,12 @@ fs.readFile(secretsPath, function (e, data) {
           IdentityProviders[parseInt(provider)][propname] = idProvidersSecrets[provider][propname];
         }
       }
-
-      // as previously generated with scripts/generate-ed25519-keypair.js
-      Ed25519SigningKey = secrets['Ed25519SigningKey']; // also includes public key, which isn't a secret
-      Ed25519SigningKey.private = crypto.createPrivateKey({
-        key: Buffer.from(Ed25519SigningKey.private, 'base64'),
-        format: 'der',
-        type: 'pkcs8'
-      });
     } catch(e) {
       log('error', 'adding secrets', e);
       throw e;  
     }
   }
 });
-
-/*
- *  Helper function to generate signed token for a particular purpose
- */
-
-var generateSignedToken = function(userId, timestamp, purpose, origin) {
-  let data = Buffer.from(JSON.stringify({
-    uid: userId,
-    ts: timestamp, 
-    for: purpose,
-    origin
-  }));
-
-  let signature = crypto.sign(null, data, Ed25519SigningKey.private);
-
-  return (data.toString('base64') + '.' + signature.toString('base64')).replace(/=/g, '');
-};
 
 /*
  *  Helper function to generate HTML for error page
@@ -589,15 +550,14 @@ var commonIdentityFunctionCallback = function(req, res, session, provider, displ
   }
 
   let userId = getUserIdFromExternalId(session.provider, uniqueId);
-
-  let timestamp = generateNewTimestamp();
+  let ts = generateNewTimestamp();
 
   let tokens = {
-    settings: generateSignedToken(userId, timestamp, "settings", origin),
-    game: generateSignedToken(userId, timestamp, "game", origin)
+    settings: token.generate({ uid: userId, ts, origin }, 'settings'),
+    game: token.generate({ uid: userId, ts, origin }, 'game')    
   };
 
-  log(req.reqid, 'generated client tokens', userId, timestamp, origin);
+  log(req.reqid, 'generated client tokens', userId, ts, origin);
 
   let html = '<html><head><script type="text/javascript">function closePopup(){window.opener.postMessage(' + 
         JSON.stringify({

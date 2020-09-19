@@ -1,56 +1,27 @@
 const log = require('./common/logger');
-const paths = require('./common/paths');
 const express = require('express');
-const path = require('path');
 const crypto = require('crypto');
-const https = require('https');
+const db = require('./common/database');
+const token = require('./common/token');
 
-const app = express()
+const app = express();
 app.disable('x-powered-by');
 
-/*
+/**
  *  Internal endpoint, proxied via nginx
  */
-
 const hostname = 'localhost';
 const port = 7777;
 
-/*
- *  Database path
- */
-
-const playersDatabasePath = path.resolve(paths.data, 'players.db')
-
-/*
- *  Set up player database and prepare statements
- */
-
-const db = require('better-sqlite3')(playersDatabasePath);
-db.pragma('synchronous = FULL');
-
-db.exec("create table if not exists settings ( user_id text not null primary key, client_settings text )");
-
-const stmtGetSettingsForUserId = db.prepare('select client_settings from settings where user_id = ?');
-const stmtSetSettingsForUserId = db.prepare('insert into settings (user_id, client_settings) values (?,?) ' 
-                                          + 'on conflict(user_id) do update set client_settings = excluded.client_settings');
-
-/*
- *  Public key from login.airmash.online, retrieved later
- */
-
-var loginPublicKey;
-
-/*
+/**
  *  Upper limit on settings data, per player
  */
-
 const SETTINGS_MAX_SIZE = 8192;
 
-/*
- *  Log all requests to this service for debugging purposes
+/**
+ * Log all requests to this service for debugging purposes
  */
-
-var nextreqid = 1;
+let nextreqid = 1;
 app.use((req, res, next) => {
   // nginx passes remote IP address in X-Real-IP header 
   // ("proxy_set_header X-Real-IP $remote_addr" in its configuration)
@@ -63,47 +34,37 @@ app.use((req, res, next) => {
   next();
 });
 
-/*
- *  Helper function for checking if requestor is authenticated
+/**
+ * Check if requestor is authenticated and if so, return user id
  */
-
-var getUserIdFromAuthToken = function(req) {
+function getUserIdFromAuthToken(req) {
   let authHeader = req.headers.authorization;
   if (authHeader === undefined) {
     return null;  
   }
 
-  // "Authorization: Bearer token"
+  /* "Authorization: Bearer token" */
   let authHeaderParts = authHeader.split(' ');
   if (authHeaderParts.length !== 2 || authHeaderParts[0].toLowerCase() !== 'bearer') {
     return null;
   }
+  const authToken = authHeaderParts[1];
 
-  // token must be two base64 strings separated by a dot
-  let token = authHeaderParts[1];
-  let tokenParts = token.split('.');
-  if (tokenParts.length !== 2) {
-    return null;
-  }
-
-  // first part is data, second part is signature
-  let data = tokenParts[0], auth;
-  let signature = tokenParts[1];
+  let auth;
   try {
-    data = Buffer.from(data, 'base64');
-    signature = Buffer.from(signature, 'base64');
-    auth = JSON.parse(data);
-  } catch(e) {
-    log(req.reqid, 'error', 'cannot parse token', e, token);
+    auth = token.validate(authToken, 'settings');
+  } catch(err) {
+    if (err.name == "TokenValidationError") {
+      log(req.reqid, 'error', 'token validation', err.message, JSON.stringify(authToken));
+    }
+    else {
+      log(req.reqid, 'error', err);
+    }
+
     return null;
   }
 
-  if (typeof auth !== 'object' || auth === null) {
-    log(req.reqid, 'error', 'authentication data must be a non-null object', JSON.stringify(data));
-    return null;
-  }
-  
-  // user id, timestamp, and purpose must be specified in token
+  /* User id and timestamp must be specified in token data */
   if (undefined === auth.uid ||
       undefined === auth.ts || 
       undefined === auth.for) {
@@ -111,46 +72,27 @@ var getUserIdFromAuthToken = function(req) {
     return null;
   }
 
-  // check uid type
+  /* Check user id type */
   if (typeof auth.uid !== 'string') {
     log(req.reqid, 'error', 'uid field must be a string', JSON.stringify(auth));
     return null;
   }
 
-  // check ts type
+  /* Check timestamp type */
   if (typeof auth.ts !== 'number') {
     log(req.reqid, 'error', 'ts field must be a number', JSON.stringify(auth));
-    return null;
-  }
-  
-  // purpose of token must be settings
-  if (auth.for !== "settings") {
-    log(req.reqid, 'error', 'token purpose is incorrect', JSON.stringify(auth));
-    return null;
-  }
-
-  // ed25519 signature must be exactly 64 bytes long
-  if (signature.length !== 64) {
-    log(req.reqid, 'error', 'invalid signature length', token);
-    return null;
-  }
-
-  // verify signature
-  if (!crypto.verify(null, data, loginPublicKey, signature)) {
-    log(req.reqid, 'error', 'signature not verified', token);
     return null;
   }
 
   return auth.uid;
 }
 
-/*
- *  Helper function to remove settings that must not be persisted
+/**
+ * Remove settings that must not be persisted
+ * 
+ * Privacy defence in depth; the client should not be trying to save these settings
  */
-
-var filterSettings = function(settings) {
-  
-  // privacy defence in depth, the client should not be trying to save these settings
+function filterSettings(settings) {
   delete settings.clienttoken;
   delete settings.identityprovider;
   delete settings.loginname;
@@ -159,10 +101,9 @@ var filterSettings = function(settings) {
   return settings;
 }
 
-/*
- *  GET https://airmash.online/settings
+/**
+ * GET https://airmash.online/settings
  */
-
 app.get('/', (req, res) => {
   let userId = getUserIdFromAuthToken(req);
   if (!userId) {
@@ -172,19 +113,19 @@ app.get('/', (req, res) => {
 
   let data;
   try {
-    data = stmtGetSettingsForUserId.get(userId);
+    data = db.userSettings.get(userId);
   } catch(e) {
     log(req.reqid, 'error', 'reading settings from database', e);
     return res.status(500).end();  
   }
 
   let json;
-  if (data && data.client_settings) {
+  if (data && data.settings) {
     try {
-      json = JSON.stringify(filterSettings(JSON.parse(data.client_settings)));
+      json = JSON.stringify(filterSettings(JSON.parse(data.settings)));
       log(req.reqid, 'settings read', json);
     } catch(e) {
-      log(req.reqid, 'error', 'settings not valid json', e, JSON.stringify(data.client_settings));
+      log(req.reqid, 'error', 'settings not valid json', e, JSON.stringify(data.settings));
       return res.status(400).end();
     }
   }
@@ -197,10 +138,9 @@ app.get('/', (req, res) => {
   return res.type('json').send(json).end();
 });
 
-/*
- *  POST https://airmash.online/settings
+/**
+ * POST https://airmash.online/settings
  */
-
 app.post('/', (req, res) => {
   let userId = getUserIdFromAuthToken(req);
   if (!userId) {
@@ -232,7 +172,7 @@ app.post('/', (req, res) => {
     try {
       let json = JSON.stringify(filterSettings(settings));
       log(req.reqid, 'settings write', userId, json);
-      let info = stmtSetSettingsForUserId.run(userId, json);
+      let info = db.userSettings.set(userId, json);
       if (info.changes != 1) {
         log(req.reqid, 'error', 'writing settings updated ' + info.changes + ' rows in player database');
         result = 0;
@@ -246,32 +186,10 @@ app.post('/', (req, res) => {
   });
 });
 
-/*
+/**
  *  Start application
  */
-
-https.get("https://login.airmash.online/key", (res) => {
-  let data = '';
-  res.on('data', (chunk) => { data += chunk; });
-
-  res.on('end', () => {
-    loginPublicKey = crypto.createPublicKey({
-      key: Buffer.from(JSON.parse(data).key, 'base64'),
-      format: 'der',
-      type: 'spki'
-    });
-    
-    if (loginPublicKey === undefined) {
-      log('error', 'cannot set up login public key');
-      process.exit(1);
-    }
-    else
-    {
-      app.set('trust proxy', 1);
-      app.listen(port, hostname, () => {
-        log('start', `server running at http://${hostname}:${port}/`);
-      });      
-    }
-  });
-});
-
+app.set('trust proxy', 1);
+app.listen(port, hostname, () => {
+  log('start', `server running at http://${hostname}:${port}/`);
+});      
