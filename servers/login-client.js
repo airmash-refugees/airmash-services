@@ -568,19 +568,23 @@ var commonIdentityFunctionCallback = function(req, res, session, provider, displ
 
   log(req.reqid, 'generated client tokens', userId, ts, origin);
 
-  let html = '<html><head><script type="text/javascript">function closePopup(){window.opener.postMessage(' + 
-        JSON.stringify({
-          nonce: session.nonce,
-          tokens,
-          provider: session.provider,
-          loginname: displayName,
-        }) +
-        ',"' + session.origin + '");' + (!session.debug ? 'window.close();' : '') + 
+  const msg = JSON.stringify({
+    nonce: session.nonce,
+    tokens,
+    provider: session.provider,
+    loginname: displayName,
+  });
+
+  let html = '<html><head><script type="text/javascript">function closePopup(){window.opener.postMessage(' + msg + ',"' + session.origin + '");' + (!session.debug ? 'window.close();' : '') + 
       '}</script></head><body onload="closePopup()">' + 
         (session.debug ? debugHtml(session, userId, provider, displayName, uniqueId, results, tokens) : '') +
       '</body></html>';
 
   session.destroy();
+
+  if (session.debug) {
+    log(req.reqid, 'posting message to client', session.origin, JSON.stringify({nonce: session.nonce, provider: session.provider, loginname: displayName}));
+  }
 
   return res.status(200).clearCookie('session').type('html').send(html).end();
 };
