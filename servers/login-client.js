@@ -268,9 +268,11 @@ fs.readFile(secretsPath, function (e, data) {
  */
 
 var errorPage = function(msg) {
-  return '<html><body><div style="position:absolute;top:50%;left:50%;transform:translateX(-50%) translateY(-50%);text-align:center">' + 
-         '<code style="word-wrap:break-word;white-space:pre;font-size:125%"><b>error</b><br/><br/>' + msg + '<br/><br/>' + 
-         '<a href="javascript:window.close();">close window</a></code></div></body></html>'
+  return '<html><head></head><body><div style="position:absolute;top:50%;left:50%;transform:translateX(-50%) translateY(-50%);text-align:center">' + 
+         '<code style="word-wrap:break-word;white-space:pre;font-size:125%"><div style="border:1px solid grey;border-radius:5px;padding:16px">' + 
+         '<b>error</b><br><br>' + msg + '<br><br><a href="javascript:window.close();">close window</a></div><br>' + 
+         '<span style="font-size:75%">this error has been logged<br><br>you may also report it <a href="https://github.com/airmash-refugees/airmash-services/issues" target="_blank">here</a><br>or on <a href="https://reddit.com/r/airmash" target="_blank">/r/airmash</a></span>' + 
+         '</code></div></body></html>'
 }
 
 /*
