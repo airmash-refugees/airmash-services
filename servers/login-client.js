@@ -135,14 +135,23 @@ var getIdentityFromTwitch = function(results, callback) {
       "https://api.twitch.tv/helix/users", 
       { headers: 
         { 'Authorization': 'Bearer ' + results.access_token,
+          'Client-ID': IdentityProviders[5].clientId,
           'User-Agent': 'login.airmash.online' }}, 
       (res) => {
         let data = '';
         res.on('data', (chunk) => { data += chunk; });
     
         res.on('end', () => {
-          let user = JSON.parse(data).data[0];
-          if (user.id === undefined) {
+          let user;
+          try {
+            user = JSON.parse(data).data[0];
+          }
+          catch(e) {
+            log('error', 'identity from twitch', e, JSON.stringify(data));
+            callback(null);
+            return;
+          }
+          if (user === undefined || user.id === undefined) {
             log('error', 'identity missing from twitch data', JSON.stringify(data));
             callback(null);
           } else {
